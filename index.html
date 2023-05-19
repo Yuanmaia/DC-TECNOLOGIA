@@ -1,0 +1,318 @@
+
+<?php
+include_once('config.php'); 
+
+$nome = $_POST ['nome']
+$pagamento = $_POST['pagamento']
+$produto = $_POST['produto']
+$quantidade = $_POST['quantidade']
+$valor-uni = $_POST['valor-uni']
+$valor-total = $_POST['valor-total']
+$valor-parcela = $_POST['valor-parcela']
+$data-vencimento = $_POST['data']
+
+$result = mysqli_query ( $conexao,"INSERT INTO usuarios(nome,pagamento,produto,quantidade,valor-uni,valor-total,valor-parcela,data-vencimento")
+VALUES ('nome','pagamento,'produto','quantidade','valor-uni','valor-total','valor-parcela','data-vencimento')");
+
+
+
+
+
+
+?>
+
+<!DOCTYPE html>
+<html>
+
+<head>
+ 
+
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .button-container {
+            text-align: right;
+        }
+
+        .button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        
+
+    </style>
+</head>
+
+<body>
+   <formm action = "index.php" method="POST"> 
+
+
+<h1>Sistema de Registro de Vendas</h1>
+
+    <form id="salesForm">
+        <label for="clientName">Nome do Cliente:</label>
+        <input type="text" id="clientName">
+
+        <label for="paymentMethod">Forma de Pagamento:</label>
+        <select id="paymentMethod">
+            <option value="cash">Dinheiro</option>
+            <option value="creditCard">Cartão de Crédito</option>
+            <option value="debitCard">Cartão de Débito</option>
+        </select>
+
+        <h3>Itens da Venda:</h3>
+        <table>
+            <tr>
+                <th>Produto</th>
+                <th>Quantidade</th>
+                <th>Valor Unitário</th>
+                <th>Valor Total</th>
+                <th></th>
+            </tr>
+            <tr>
+                <td><input type="text" class="product"></td>
+                <td><input type="number" class="quantity" min="1"></td>
+                <td><input type="number" class="unitPrice" min="0.01" step="0.01"></td>
+                <td><input type="text" class="totalPrice" readonly></td>
+                <td><button type="button" onclick="removeItem(this)">Remover</button></td>
+            </tr>
+        </table>
+        <button type="button" onclick="addItem()">Adicionar Item</button>
+
+        <h3>Parcelas:</h3>
+        <table>
+            <tr>
+                <th>Data de Vencimento</th>
+                <th>Valor</th>
+                <th></th>
+            </tr>
+            <tr>
+                <td><input type="date" class="dueDate"></td>
+                <td><input type="number" class="installmentAmount" min="0.01" step="0.01"></td>
+                <td><button type="button" onclick="removeInstallment(this)">Remover</button></td>
+            </tr>
+        </table>
+        <button type="button" onclick="addInstallment()">Adicionar Parcela</button>
+
+        <div class="button-container">
+            <button type="submit" class="button">Registrar Venda</button>
+        </div>
+    </form>
+
+    <h2>Listagem de Vendas:</h2>
+    <table id="salesTable">
+        <tr>
+            <th>Cliente</th>
+            <th>Itens</th>
+            <th>Forma de Pagamento</th>
+            <th>Parcelas</th>
+            <th></th>
+        </tr>
+    </table>
+
+    <script>
+        const salesForm = document.getElementById('salesForm');
+        const salesTable = document.getElementById('salesTable');
+
+        function addItem() {
+            const itemsTable = salesForm.querySelector('table:nth-of-type(1)');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+        <td><input type="text" class="product"></td>
+        <td><input type="number" class="quantity" min="1" onchange="calculateTotalPrice(this)"></td>
+        <td><input type="number" class="unitPrice" min="0.01" step="0.01" onchange="calculateTotalPrice(this)"></td>
+        <td><input type="text" class="totalPrice" readonly></td>
+        <td><button type="button" onclick="removeItem(this)">Remover</button></td>
+      `;
+            itemsTable.appendChild(newRow);
+        }
+
+        function removeItem(button) {
+            const row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+
+        function addInstallment() {
+            const installmentsTable = salesForm.querySelector('table:nth-of-type(2)');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+        <td><input type="date" class="dueDate"></td>
+        <td><input type="number" class="installmentAmount" min="0.01" step="0.01"></td>
+        <td><button type="button" onclick="removeInstallment(this)">Remover</button></td>
+      `;
+            installmentsTable.appendChild(newRow);
+        }
+
+        function removeInstallment(button) {
+            const row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+
+        function calculateTotalPrice(input) {
+            const row = input.parentNode.parentNode;
+            const quantity = row.querySelector('.quantity').value;
+            const unitPrice = row.querySelector('.unitPrice').value;
+            const totalPrice = row.querySelector('.totalPrice');
+            totalPrice.value = (quantity * unitPrice).toFixed(2);
+        }
+
+        function registerSale(event) {
+            event.preventDefault();
+
+            const clientName = document.getElementById('clientName').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const items = [];
+            const itemRows = salesForm.querySelectorAll('table:nth-of-type(1) tr');
+            itemRows.forEach((row) => {
+                const product = row.querySelector('.product').value;
+                const quantity = row.querySelector('.quantity').value;
+                const unitPrice = row.querySelector('.unitPrice').value;
+                const totalPrice = row.querySelector('.totalPrice').value;
+                items.push({
+                    product: product,
+                    quantity: quantity,
+                    unitPrice: unitPrice,
+                    totalPrice: totalPrice
+                });
+            });
+
+            const installments = [];
+            const installmentRows = salesForm.querySelectorAll('table:nth-of-type(2) tr');
+            installmentRows.forEach((row) => {
+                const dueDate = row.querySelector('.dueDate').value;
+                const installmentAmount = row.querySelector('.installmentAmount').value;
+                installments.push({
+                    dueDate: dueDate,
+                    installmentAmount: installmentAmount
+                });
+            });
+
+            const sale = {
+                clientName: clientName,
+                paymentMethod: paymentMethod,
+                items: items,
+                installments: installments
+            };
+
+            displaySale(sale);
+            salesForm.reset();
+        }
+
+        function displaySale(sale) {
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+        <td>${sale.clientName}</td>
+        <td>${sale.items.length}</td>
+        <td>${sale.paymentMethod}</td>
+        <td>${sale.installments.length}</td>
+        <td><button type="button" onclick="removeSale(this)">Excluir</button></td>
+      `;
+            salesTable.appendChild(newRow);
+        }
+
+        function removeSale(button) {
+            const row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+
+        salesForm.addEventListener('submit', registerSale);
+
+
+        // Função para realizar o login
+        function login(usuario, senha) {
+            // Lógica de autenticação do usuário
+            // ...
+            // Retornar true se o login for bem-sucedido, caso contrário, false
+        }
+
+        // Exemplo de uso do login
+        if (login("usuario", "senha")) {
+            // Login bem-sucedido, continuar com o sistema
+        } else {
+            // Login falhou, exibir mensagem de erro
+        }
+
+        // Função para filtrar as vendas com base em determinados critérios
+        function filtrarVendas(cliente, formaPagamento) {
+            var vendasFiltradas = vendas.filter(function (venda) {
+                // Verificar se a venda atende aos critérios de filtro
+                if (cliente && venda.cliente !== cliente) {
+                    return false;
+                }
+                if (formaPagamento && venda.formaPagamento !== formaPagamento) {
+                    return false;
+                }
+                return true;
+            });
+
+            // Retornar as vendas filtradas
+            return vendasFiltradas;
+        }
+
+        // Exemplo de uso do filtro
+        var vendasFiltradas = filtrarVendas("João", "Cartão de crédito");
+        console.log("Vendas filtradas:", vendasFiltradas);
+
+        // Função para baixar o resumo da venda como PDF
+        function baixarResumoVendaPDF(venda) {
+            // Criar um novo documento PDF
+            var doc = new jsPDF();
+
+            // Gerar o conteúdo do PDF
+            var conteudo = "Resumo da Venda\n\n";
+            conteudo += "Cliente: " + venda.cliente + "\n";
+            conteudo += "Itens: " + venda.itens + "\n";
+            conteudo += "Forma de Pagamento: " + venda.formaPagamento + "\n";
+            // Adicionar mais informações relevantes
+
+            // Adicionar o conteúdo ao PDF
+            doc.text(conteudo, 10, 10);
+
+            // Baixar o PDF
+            doc.save("resumo_venda.pdf");
+        }
+
+        // Exemplo de uso do download do PDF
+        var vendaExemplo = vendas[0]; // Supondo que seja a primeira venda na lista
+        baixarResumoVendaPDF(vendaExemplo);
+
+
+    </script>
+  <button id="gerar-pdf">Gerar PDF</button>
+  
+</body>
+
+</html>
